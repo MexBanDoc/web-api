@@ -1,3 +1,5 @@
+using System;
+using System.Reflection;
 using AutoMapper;
 using Game.Domain;
 using Microsoft.AspNetCore.Builder;
@@ -5,6 +7,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using WebApi.Models;
 
 namespace WebApi
@@ -34,14 +38,20 @@ namespace WebApi
                 .ConfigureApiBehaviorOptions(options => {
                     options.SuppressModelStateInvalidFilter = true;
                     options.SuppressMapClientErrors = true;
+                })
+                .AddNewtonsoftJson(options =>
+                {
+                    options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+                    options.SerializerSettings.DefaultValueHandling = DefaultValueHandling.Populate;
                 });
             services.AddSingleton<IUserRepository, InMemoryUserRepository>();
             services.AddAutoMapper(cfg =>
                 {
                     cfg.CreateMap<UserEntity, UserDto>()
                         .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => $"{src.FirstName} {src.LastName}"));
+                    cfg.CreateMap<UserCreateDto, UserEntity>();
                 },
-                new System.Reflection.Assembly[0]);
+                Array.Empty<Assembly>());
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
