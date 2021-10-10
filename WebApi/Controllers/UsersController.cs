@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using AutoMapper;
 using Game.Domain;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
+using Newtonsoft.Json;
 using WebApi.Models;
 
 namespace WebApi.Controllers
@@ -14,12 +17,14 @@ namespace WebApi.Controllers
     {
         private readonly IUserRepository userRepository;
         private readonly IMapper mapper;
+        private readonly LinkGenerator linkGenerator;
 
         // Чтобы ASP.NET положил что-то в userRepository требуется конфигурация
-        public UsersController(IUserRepository userRepository, IMapper mapper)
+        public UsersController(IUserRepository userRepository, IMapper mapper, LinkGenerator linkGenerator)
         {
             this.userRepository = userRepository;
             this.mapper = mapper;
+            this.linkGenerator = linkGenerator;
         }
 
         [HttpHead("{userId}")]
@@ -32,6 +37,32 @@ namespace WebApi.Controllers
                 return NotFound();
             var userDto = mapper.Map<UserDto>(user);
             return Ok(userDto);
+        }
+        
+        [HttpGet(Name = nameof(GetUsers))]
+        [Produces("application/json", "application/xml")]
+        public IActionResult GetUsers([FromQuery] int pageNumber=1, [FromQuery] int pageSize=10)
+        {
+            pageNumber = Math.Max(1, pageNumber);
+            pageSize = Math.Min(20, Math.Max(1, pageSize));
+            var pageList = userRepository.GetPage(pageNumber, pageSize);
+            var users = mapper.Map<IEnumerable<UserDto>>(pageList);
+            string previousPageLink = null;
+            if (pageNumber > 1)
+            {
+                previousPageLink = linkGenerator.GetUriByRouteValues(HttpContext, "GetUsers", new {pageNumber=pageNumber-1,pageSize});
+            }
+            var paginationHeader = new
+            {
+                previousPageLink,
+                nextPageLink = linkGenerator.GetUriByRouteValues(HttpContext, "GetUsers", new {pageNumber=pageNumber+1, pageSize}),
+                totalCount = 3,
+                pageSize,
+                currentPage = pageNumber,
+                totalPages = 3,
+            };
+            Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(paginationHeader));
+            return Ok(users);
         }
 
         [HttpPost]
@@ -105,7 +136,7 @@ namespace WebApi.Controllers
             return NoContent();
         }
 
-        [HttpDelete("{userId}", Name = nameof(DeleteUser))]
+        [HttpDelete("{userId:guid}", Name = nameof(DeleteUser))]
         public IActionResult DeleteUser([FromRoute] Guid userId)
         {
             if (userRepository.FindById(userId) == null)
