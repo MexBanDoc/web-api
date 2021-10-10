@@ -6,6 +6,7 @@ using Game.Domain;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
 using WebApi.Models;
 
@@ -145,6 +146,13 @@ namespace WebApi.Controllers
             }
             userRepository.Delete(userId);
             return NoContent();
+        }
+
+        [HttpOptions]
+        public IActionResult Options()
+        {
+            Response.Headers.Add("Allow", new []{"GET", "POST", "OPTIONS"});
+            return Ok();
         }
     }
 }
