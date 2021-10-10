@@ -103,5 +103,16 @@ namespace WebApi.Controllers
             userRepository.Update(user);
             return NoContent();
         }
+
+        [HttpDelete("{userId}", Name = nameof(DeleteUser))]
+        public IActionResult DeleteUser([FromRoute] Guid userId)
+        {
+            if (userRepository.FindById(userId) == null)
+            {
+                return NotFound();
+            }
+            userRepository.Delete(userId);
+            return NoContent();
+        }
     }
 }
