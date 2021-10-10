@@ -22,6 +22,7 @@ namespace WebApi.Controllers
             this.mapper = mapper;
         }
 
+        [HttpHead("{userId}")]
         [HttpGet("{userId}", Name = nameof(GetUserById))]
         [Produces("application/json", "application/xml")]
         public ActionResult<UserDto> GetUserById([FromRoute] Guid userId)
