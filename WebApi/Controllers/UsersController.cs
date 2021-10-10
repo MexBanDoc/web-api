@@ -41,15 +41,40 @@ namespace WebApi.Controllers
 
             if (string.IsNullOrEmpty(user.Login) || !user.Login.All(char.IsLetterOrDigit))
                 ModelState.AddModelError(nameof(UserCreateDto.Login), "Логин есть Грут");
-            
+
             if (!ModelState.IsValid)
                 return UnprocessableEntity(ModelState);
-            
+
             var userEntity = mapper.Map<UserEntity>(user);
             var createdUserEntity = userRepository.Insert(userEntity);
             return CreatedAtRoute(nameof(GetUserById),
                 new {userId = createdUserEntity.Id},
                 createdUserEntity.Id);
+        }
+
+        [HttpPut("{userId}", Name = nameof(UpdateUser))]
+        [Produces("application/json", "application/xml")]
+        public IActionResult UpdateUser([FromRoute] Guid userId, [FromBody] UserUpdateDto user)
+        {
+            if (userId.Equals(Guid.Empty) || user == null)
+            {
+                return BadRequest();
+            }
+
+            if (!ModelState.IsValid)
+                return UnprocessableEntity(ModelState);
+            
+            user.Id = userId;
+            var userEntity = mapper.Map<UserEntity>(user);
+            userRepository.UpdateOrInsert(userEntity, out var isInserted);
+            if (isInserted)
+            {
+                return CreatedAtRoute(nameof(UpdateUser),
+                    new {userId = userEntity.Id},
+                    userEntity.Id);
+            }
+
+            return NoContent();
         }
     }
 }

@@ -50,6 +50,7 @@ namespace WebApi
                     cfg.CreateMap<UserEntity, UserDto>()
                         .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => $"{src.FirstName} {src.LastName}"));
                     cfg.CreateMap<UserCreateDto, UserEntity>();
+                    cfg.CreateMap<UserUpdateDto, UserEntity>();
                 },
                 Array.Empty<Assembly>());
         }
